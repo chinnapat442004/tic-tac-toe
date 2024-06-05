@@ -1,47 +1,42 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import { ref } from 'vue'
+const table = ref([
+  ['X', 'O', ''],
+  ['', '', ''],
+  ['', '', '']
+])
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
+  <div style="font-size: 80px; text-align: center; margin-bottom: 50px">TIC TAC TOE</div>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <v-card
+    v-for="(row, x) in table"
+    :key="x"
+    style="
+      display: flex;
+      justify-content: center;
+      background-color: #222831;
+      margin: auto;
+      width: 495px;
+    "
+  >
+    <v-card
+      v-for="(col, y) in row"
+      :key="y"
+      height="165"
+      width="165"
+      style="
+        border-radius: 0;
+        text-align: center;
+        align-items: center;
+        font-size: 100px;
+        color: green;
+        border: 3px solid white;
+        background-color: #31363f;
+      "
+    >
+      {{ col }}
+    </v-card>
+  </v-card>
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>
