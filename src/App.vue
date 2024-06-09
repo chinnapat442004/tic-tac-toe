@@ -1,40 +1,24 @@
 <script setup>
 import { provide } from 'vue'
-import { ref } from 'vue'
 import WinnerDialog from './WinnerDialog.vue'
+import { useTableStore } from './store/table'
+import { ref } from 'vue'
+const tableStore = useTableStore()
 
-const currentPlayer = ref('O')
-const winner = ref()
 const dialog = ref(false)
-const empty = ref(true)
 
 provide('dialog', dialog)
-provide('winner', winner)
-const table = ref([
-  ['', '', ''],
-  ['', '', ''],
-  ['', '', '']
-])
-provide('table', table)
-async function clearTable() {
-  table.value = [
-    ['', '', ''],
-    ['', '', ''],
-    ['', '', '']
-  ]
-  winner.value = null
-  currentPlayer.value = await 'O'
-}
+
 async function checkDraw() {
-  if (!winner.value) {
+  if (!tableStore.winner) {
     outerLoop: for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
-        console.log(i, j, table.value[i][j])
-        if (table.value[i][j] === '') {
-          empty.value = await true
+        if (tableStore.table[i][j] === '') {
+          tableStore.empty = await true
+
           break outerLoop
         } else {
-          empty.value = false
+          tableStore.empty = false
         }
       }
     }
@@ -44,11 +28,11 @@ async function checkDraw() {
 function checkRow() {
   for (let row = 0; row < 3; row++) {
     if (
-      table.value[row][0] === currentPlayer.value &&
-      table.value[row][1] === currentPlayer.value &&
-      table.value[row][2] === currentPlayer.value
+      tableStore.table[row][0] === tableStore.currentPlayer &&
+      tableStore.table[row][1] === tableStore.currentPlayer &&
+      tableStore.table[row][2] === tableStore.currentPlayer
     ) {
-      winner.value = currentPlayer.value
+      tableStore.winner = tableStore.currentPlayer
       dialog.value = true
     }
   }
@@ -57,11 +41,11 @@ function checkRow() {
 function checkCol() {
   for (let col = 0; col < 3; col++) {
     if (
-      table.value[0][col] === currentPlayer.value &&
-      table.value[1][col] === currentPlayer.value &&
-      table.value[2][col] === currentPlayer.value
+      tableStore.table[0][col] === tableStore.currentPlayer &&
+      tableStore.table[1][col] === tableStore.currentPlayer &&
+      tableStore.table[2][col] === tableStore.currentPlayer
     ) {
-      winner.value = currentPlayer.value
+      tableStore.winner = tableStore.currentPlayer
       dialog.value = true
     }
   }
@@ -69,69 +53,68 @@ function checkCol() {
 
 function checkX() {
   if (
-    table.value[0][0] === currentPlayer.value &&
-    table.value[1][1] === currentPlayer.value &&
-    table.value[2][2] === currentPlayer.value
+    tableStore.table[0][0] === tableStore.currentPlayer &&
+    tableStore.table[1][1] === tableStore.currentPlayer &&
+    tableStore.table[2][2] === tableStore.currentPlayer
   ) {
-    winner.value = currentPlayer.value
+    tableStore.winner = tableStore.currentPlayer
     dialog.value = true
   } else if (
-    table.value[0][2] === currentPlayer.value &&
-    table.value[1][1] === currentPlayer.value &&
-    table.value[2][0] === currentPlayer.value
+    tableStore.table[0][2] === tableStore.currentPlayer &&
+    tableStore.table[1][1] === tableStore.currentPlayer &&
+    tableStore.table[2][0] === tableStore.currentPlayer
   ) {
-    winner.value = currentPlayer.value
+    tableStore.winner = tableStore.currentPlayer
     dialog.value = true
   }
 }
 
 async function getCurrentPlayer(x, y) {
-  if (table.value[x][y] === '') {
-    if (currentPlayer.value === 'X') {
-      currentPlayer.value = 'O'
+  if (tableStore.table[x][y] === '') {
+    if (tableStore.currentPlayer === 'X') {
+      tableStore.currentPlayer = 'O'
     } else {
-      currentPlayer.value = 'X'
+      tableStore.currentPlayer = 'X'
     }
-    table.value[x][y] = currentPlayer.value
+    tableStore.table[x][y] = tableStore.currentPlayer
   }
   //Calculate winner
 
   checkRow()
   checkCol()
   checkX()
-  checkDraw()
+  await checkDraw()
+  console.log(tableStore.empty)
+  if (tableStore.empty === false) {
+    dialog.value = true
+  }
 }
 </script>
 
 <template>
-  <div style="font-size: 80px; text-align: center; margin-bottom: 50px">TIC TAC TOE</div>
+  <div style="font-size: 60px; text-align: center; margin: 20px 0px 20px 0px">TIC TAC TOE</div>
 
   <v-card
-    v-for="(row, x) in table"
+    v-for="(row, x) in tableStore.table"
     :key="x"
-    style="
-      display: flex;
-      justify-content: center;
-      background-color: #222831;
-      margin: auto;
-      width: 495px;
-    "
+    elevation="0"
+    style="display: flex; justify-content: center; background-color: #222831; margin: auto"
   >
     <v-card
       v-for="(col, y) in row"
       :key="y"
-      height="165"
-      width="165"
+      height="125"
+      width="125"
       style="
         border-radius: 0;
         text-align: center;
         align-items: center;
-        font-size: 100px;
+        font-size: 90px;
 
         border: 3px solid white;
         background-color: #31363f;
       "
-      @click="!winner ? getCurrentPlayer(x, y) : ''"
+      @click="!tableStore.winner ? getCurrentPlayer(x, y) : ''"
     >
       <strong :class="col === 'X' ? 'text-red-lighten-1' : 'text-cyan-lighten-1'">
         {{ col }}</strong
@@ -139,33 +122,37 @@ async function getCurrentPlayer(x, y) {
     </v-card>
   </v-card>
 
-  <div style="text-align: center; font-size: 72px; margin-top: 50px">
+  <div style="text-align: center; font-size: 58px; margin-top: 25px">
     Player :
     <strong
-      v-if="!winner"
-      :class="currentPlayer === 'O' ? 'text-red-lighten-1' : 'text-cyan-lighten-1'"
+      v-if="!tableStore.winner"
+      :class="tableStore.currentPlayer === 'O' ? 'text-red-lighten-1' : 'text-cyan-lighten-1'"
     >
-      {{ currentPlayer === 'O' ? 'X' : 'O' }}</strong
+      {{ tableStore.currentPlayer === 'O' ? 'X' : 'O' }}</strong
     >
-    <strong v-else :class="currentPlayer === 'X' ? 'text-red-lighten-1' : 'text-cyan-lighten-1'">
-      {{ currentPlayer }}</strong
+    <strong
+      v-else
+      :class="tableStore.currentPlayer === 'X' ? 'text-red-lighten-1' : 'text-cyan-lighten-1'"
+    >
+      {{ tableStore.currentPlayer }}</strong
     >
   </div>
   <div style="text-align: center">
     <v-btn
       width="200"
-      height="50"
+      height="43"
       color="#9a8c98"
-      @click="clearTable()"
+      @click="tableStore.clearTable()"
       style="
         color: black;
-        font-size: 30px;
+        font-size: 25px;
         border: 5px solid #f2e9e4;
         border-radius: 15px;
-        margin-top: 30px;
+        margin-top: 15px;
       "
       >reset</v-btn
     >
   </div>
+
   <WinnerDialog></WinnerDialog>
 </template>
